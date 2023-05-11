@@ -1,4 +1,3 @@
-from app import app, img_model, es
 from flask import render_template, redirect, url_for, request, send_file
 from app.searchForm import SearchForm
 from app.inputFileForm import InputFileForm
@@ -7,17 +6,29 @@ from werkzeug.exceptions import RequestEntityTooLarge
 import elasticsearch
 import os
 from PIL import Image
+from flask import Flask
+import config
+from sentence_transformers import SentenceTransformer
+from elasticsearch import Elasticsearch
 
-INFER_ENDPOINT = "/_ml/trained_models/{model}/deployment/_infer"
+app = Flask(__name__)
+app.config.from_object(config)
+# Load model, run against the image and create image embedding
+img_model = SentenceTransformer('clip-ViT-B-32')
+
+es = Elasticsearch(hosts='http://127.0.0..1:9200',
+                   basic_auth=('elastic', 'passwd'))
+
+# INFER_ENDPOINT = "/_ml/trained_model_statsodels/{model}/deployment/_infer"
 INFER_MODEL_IM_SEARCH = 'sentence-transformers__clip-vit-b-32-multilingual-v1'
 
 INDEX_IM_EMBED = 'my-image-embeddings'
 
-HOST = app.config['ELASTICSEARCH_HOST']
-AUTH = (app.config['ELASTICSEARCH_USER'], app.config['ELASTICSEARCH_PASSWORD'])
-HEADERS = {'Content-Type': 'application/json'}
+# HOST = 'http:192.168.2.119:9200'
+# AUTH = ('elastic', 'passwd')
+# HEADERS = {'Content-Type': 'application/json'}
 
-TLS_VERIFY = app.config['VERIFY_TLS']
+# TLS_VERIFY = 'false'
 
 app_models = {}
 
@@ -62,7 +73,6 @@ def image_search():
                     source=True)
 
                 if (image_info is not None):
-
                     found_image = image_info['hits']['hits'][0]["_source"]
                     found_image_embedding = found_image['image_embedding']
                     search_response = knn_search_images(
@@ -79,14 +89,15 @@ def image_search():
 
                 return render_template('image_search.html', title='Image search', form=form,
                                        search_results=search_response['hits']['hits'],
-                                       query=form.searchbox.data,  model_up=True)
+                                       query=form.searchbox.data, model_up=True)
 
             else:
                 return redirect(url_for('image_search'))
         else:  # GET
             return render_template('image_search.html', title='Image search', form=form, model_up=True)
     else:
-        return render_template('image_search.html', title='Image search', model_up=False, model_name=INFER_MODEL_IM_SEARCH)
+        return render_template('image_search.html', title='Image search', model_up=False,
+                               model_name=INFER_MODEL_IM_SEARCH)
 
 
 @app.route('/similar_image', methods=['GET', 'POST'])
@@ -202,3 +213,8 @@ def is_model_up_and_running(model: str):
             app_models[model] = 'down'
     except elasticsearch.NotFoundError:
         app_models[model] = 'na'
+
+
+# if __name__ == "__main__":
+#     # Only for debugging while developing
+#     app.run(host="127.0.0.1", debug=False, port=5001)

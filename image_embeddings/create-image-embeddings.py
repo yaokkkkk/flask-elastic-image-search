@@ -12,9 +12,9 @@ from tqdm import tqdm
 from datetime import datetime
 from exif import Image as exifImage
 
-ES_HOST = "https://127.0.0.1:9200/"
+ES_HOST = "http://127.0.0..1:9200/"
 ES_USER = "elastic"
-ES_PASSWORD = "changeme"
+ES_PASSWORD = "passwd"
 ES_TIMEOUT = 3600
 
 DEST_INDEX = "my-image-embeddings"
@@ -73,7 +73,7 @@ def main():
         doc['image_id'] = create_image_id(filename)
         doc['image_name'] = os.path.basename(filename)
         doc['image_embedding'] = embedding.tolist()
-        doc['relative_path'] = os.path.relpath(filename).split(PREFIX)[1]
+        doc['relative_path'] = os.path.relpath(filename).split('images')[1].replace("\\", "")
         doc['exif'] = {}
 
         try:
@@ -106,7 +106,6 @@ def main():
     else:
         es = Elasticsearch(
             hosts=[args.es_host],
-            verify_certs=args.verify_certs,
             basic_auth=(args.es_user, args.es_password)
         )
 
