@@ -12,17 +12,17 @@ from tqdm import tqdm
 from datetime import datetime
 from exif import Image as exifImage
 
-ES_HOST = "http://127.0.0..1:9200/"
+ES_HOST = "http://192.168.2.119:9200/"
 ES_USER = "elastic"
-ES_PASSWORD = "passwd"
+ES_PASSWORD = "123456"
 ES_TIMEOUT = 3600
 
 DEST_INDEX = "my-image-embeddings"
-DELETE_EXISTING = True
+DELETE_EXISTING = False
 CHUNK_SIZE = 100
 
-PATH_TO_IMAGES = "../app/static/images/**/*.jp*g"
-PREFIX = "../app/static/images/"
+PATH_TO_IMAGES = "../app/static/upload_images/**/*.**"
+PREFIX = "../app/static/upload_images/"
 
 CA_CERT='../app/conf/ess-cloud.cer'
 
@@ -42,7 +42,7 @@ parser.add_argument('--chunk_size', dest='chunk_size', required=False, default=C
                     help="Default: " + str(CHUNK_SIZE))
 parser.add_argument('--timeout', dest='timeout', required=False, default=ES_TIMEOUT, type=int,
                     help="Request timeout in seconds. Default: " + str(ES_TIMEOUT))
-parser.add_argument('--delete_existing', dest='delete_existing', required=False, default=True,
+parser.add_argument('--delete_existing', dest='delete_existing', required=False, default=False,
                     action=argparse.BooleanOptionalAction,
                     help="Delete existing indices if they are present in the cluster. Default: True")
 parser.add_argument('--ca_certs', dest='ca_certs', required=False,# default=CA_CERT,
@@ -73,7 +73,7 @@ def main():
         doc['image_id'] = create_image_id(filename)
         doc['image_name'] = os.path.basename(filename)
         doc['image_embedding'] = embedding.tolist()
-        doc['relative_path'] = os.path.relpath(filename).split('images')[1].replace("\\", "")
+        doc['relative_path'] = os.path.relpath(filename).split('upload_images')[1].replace("\\", "")
         doc['exif'] = {}
 
         try:
@@ -116,17 +116,17 @@ def main():
     try:
         with open("image-embeddings-mappings.json", "r") as config_file:
             config = json.loads(config_file.read())
-            if args.delete_existing:
-                if es.indices.exists(index=index):
+            if es.indices.exists(index=index):
+                if args.delete_existing:
                     print("Deleting existing %s" % index)
                     es.indices.delete(index=index, ignore=[400, 404])
-
-            print("Creating index %s" % index)
-            es.indices.create(index=index,
-                              mappings=config["mappings"],
-                              settings=config["settings"],
-                              ignore=[400, 404],
-                              request_timeout=args.timeout)
+            else:
+                print("Creating index %s" % index)
+                es.indices.create(index=index,
+                                  mappings=config["mappings"],
+                                  settings=config["settings"],
+                                  ignore=[400, 404],
+                                  request_timeout=args.timeout)
 
 
         count = 0

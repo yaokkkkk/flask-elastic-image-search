@@ -17,8 +17,8 @@ app.config["SECRET_KEY"] = "12345678"
 # Load model, run against the image and create image embedding
 img_model = SentenceTransformer('clip-ViT-B-32')
 
-es = Elasticsearch(hosts='http://127.0.0..1:9200',
-                   basic_auth=('elastic', 'passwd'))
+es = Elasticsearch(hosts='http://192.168.2.119:9200',
+                   basic_auth=('elastic', '123456'))
 
 # INFER_ENDPOINT = "/_ml/trained_model_statsodels/{model}/deployment/_infer"
 INFER_MODEL_IM_SEARCH = 'sentence-transformers__clip-vit-b-32-multilingual-v1'
@@ -26,7 +26,7 @@ INFER_MODEL_IM_SEARCH = 'sentence-transformers__clip-vit-b-32-multilingual-v1'
 INDEX_IM_EMBED = 'my-image-embeddings'
 
 # HOST = 'http:192.168.2.119:9200'
-# AUTH = ('elastic', 'passwd')
+# AUTH = ('elastic', '123456')
 # HEADERS = {'Content-Type': 'application/json'}
 
 # TLS_VERIFY = 'false'
